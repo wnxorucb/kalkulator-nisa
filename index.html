@@ -7,7 +7,7 @@
     <style>
         * {
             box-sizing: border-box;
-            user-select: none; /* mengurangi teks terpilih saat tap cepat */
+            user-select: none;
         }
 
         body {
@@ -21,14 +21,12 @@
             padding: 20px;
         }
 
-        /* Container utama dengan efek imut */
         .calculator-card {
             max-width: 380px;
             width: 100%;
             background: rgba(255, 245, 250, 0.95);
             border-radius: 70px 70px 80px 80px;
             box-shadow: 0 30px 40px rgba(0, 0, 0, 0.2), 0 0 0 12px #ffe0f0, 0 0 0 16px #ffb7cf;
-            backdrop-filter: blur(0px);
             overflow: hidden;
             transition: transform 0.2s ease;
         }
@@ -37,7 +35,6 @@
             transform: scale(1.01);
         }
 
-        /* Header lucu */
         .cute-header {
             background: #ffecf3;
             padding: 18px 20px 12px 20px;
@@ -78,7 +75,6 @@
             50% { transform: scale(1.2); }
         }
 
-        /* Layar kalkulator */
         .display-screen {
             background: #2d1f2b;
             margin: 20px 25px 15px 25px;
@@ -119,7 +115,6 @@
             box-shadow: inset 0 2px 6px rgba(0,0,0,0.05);
         }
 
-        /* grid tombol imut */
         .buttons-panel {
             padding: 10px 20px 30px 20px;
             display: grid;
@@ -148,7 +143,6 @@
             box-shadow: 0 2px 0 #cfa5bd;
         }
 
-        /* tombol spesial */
         .operator-btn {
             background: #ffd9e8;
             color: #c2185b;
@@ -176,14 +170,12 @@
             font-size: 1.4rem;
         }
 
-        /* tombol angka */
         .num-btn {
             background: white;
             color: #e84393;
             font-weight: 700;
         }
 
-        /* catatan kecil */
         .footer-note {
             text-align: center;
             padding: 10px 10px 18px;
@@ -225,31 +217,26 @@
     </div>
 
     <div class="buttons-panel">
-        <!-- Baris 1: Clear, Delete, %, / -->
         <button class="clear-btn" data-action="clear">C</button>
         <button class="delete-btn" data-action="delete">⌫</button>
         <button class="operator-btn" data-op="%">%</button>
         <button class="operator-btn" data-op="/">÷</button>
 
-        <!-- Baris 2: 7 8 9 * -->
         <button class="num-btn" data-num="7">7</button>
         <button class="num-btn" data-num="8">8</button>
         <button class="num-btn" data-num="9">9</button>
         <button class="operator-btn" data-op="*">×</button>
 
-        <!-- Baris 3: 4 5 6 - -->
         <button class="num-btn" data-num="4">4</button>
         <button class="num-btn" data-num="5">5</button>
         <button class="num-btn" data-num="6">6</button>
         <button class="operator-btn" data-op="-">−</button>
 
-        <!-- Baris 4: 1 2 3 + -->
         <button class="num-btn" data-num="1">1</button>
         <button class="num-btn" data-num="2">2</button>
         <button class="num-btn" data-num="3">3</button>
         <button class="operator-btn" data-op="+">+</button>
 
-        <!-- Baris 5: 0 , 00, ., = -->
         <button class="num-btn" data-num="0">0</button>
         <button class="num-btn" data-num="00">00</button>
         <button class="num-btn" data-dot=".">.</button>
@@ -261,44 +248,30 @@
 </div>
 
 <script>
-    // ======================= KALKULATOR UNTUK NISA IMUT =======================
-    // Fitur: ekspresi dinamis, eval aman (Function constructor), validasi error, 
-    // tombol hapus, clear, persen, dan dukungan desimal + angka 00.
-    
-    // State utama
-    let currentExpression = "";   // menyimpan ekspresi matematika yg akan ditampilkan & dievaluasi
-    let lastResult = null;        // menyimpan hasil terakhir (opsional)
-    let justEvaluated = false;    // flag setelah tekan '=', untuk mengganti ekspresi jika tekan angka / operator
-    
-    // Elemen DOM
+    let currentExpression = "";
+    let justEvaluated = false;
+
     const expressionDiv = document.getElementById("expressionDisplay");
     const resultDiv = document.getElementById("resultDisplay");
-    
-    // Fungsi update tampilan (ekspresi & hasil)
+
     function updateDisplay() {
-        // Tampilkan ekspresi, jika kosong tampilkan '0'
         if (currentExpression === "") {
             expressionDiv.innerText = "0";
         } else {
             expressionDiv.innerText = currentExpression;
         }
         
-        // Hasil: evaluasi dan tampilkan hanya jika ekspresi valid, kalau tidak tampilkan pesan atau hasil sebelumnya
-        // tapi lebih baik kita evaluasi realtime untuk preview hasil (tanpa mengganggu)
         if (currentExpression.trim() === "") {
             resultDiv.innerText = "0";
             return;
         }
         
-        // Coba evaluasi ekspresi matematika (aman) untuk pratinjau hasil
         try {
             let evalResult = evaluateExpression(currentExpression);
-            // Jika hasilnya valid number, format untuk menghilangkan floating point berlebihan
             if (typeof evalResult === 'number' && !isNaN(evalResult) && isFinite(evalResult)) {
                 let formatted = formatResult(evalResult);
                 resultDiv.innerText = formatted;
             } else {
-                // Jika Infinity atau NaN, tampilkan "Error"
                 resultDiv.innerText = "Error";
             }
         } catch (e) {
@@ -306,46 +279,25 @@
         }
     }
     
-    // Evaluasi ekspresi dengan Function (lebih aman dari eval, tetap hati-hati)
     function evaluateExpression(expr) {
-        // Bersihkan dari karakter yang tidak diinginkan, hanya angka, operator, titik, kurung opsional? kita tidak pakai kurung manual tapi bisa dari ekspresi
-        // Dukung operator: + - * / % dan titik desimal. Hindari multiple operator berturut-turut tapi nanti di-santaiin.
-        // Ganti simbol × dan ÷ agar sesuai javascript
-        let prepared = expr.replace(/×/g, '*').replace(/÷/g, '/');
-        // Pastikan tidak ada karakter berbahaya; hanya angka, operator, %, ., spasi
-        // Cek pola aman: angka, operator aritmatika dasar, titik, spasi, tanda kurung sederhana (tidak wajib, tapi jika ada biarkan)
-        // Namun untuk kalkulator sederhana kita filtering secara tidak membahayakan, tapi gunakan Function
-        // Filter karakter ilegal: hanya boleh 0-9, + - * / % . ( ) dan spasi
+        let prepared = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
         const allowedRegex = /^[0-9+\-*/%.()\s]+$/;
         if (!allowedRegex.test(prepared)) {
             throw new Error("Invalid expression");
         }
-        // Hindari pembagian dengan nol akan menghasilkan Infinity, biarkan user tahu.
-        // Gunakan Function constructor untuk evaluasi yang lebih aman dari eval (masih perlu sanitasi)
-        // Kita tambahkan penanganan persen: misal 50% menjadi 0.5, tapi lebih kompleks; namun dalam kalkulator standar, persen memodifikasi angka sebelumnya.
-        // TAPI karena kita mendukung % sebagai operator sisa bagi (modulus) dalam matematika? 
-        // Dalam kalkulator ini saya akan mengartikan % sebagai modulo (sisa bagi) seperti pada programming: 10%3 = 1.
-        // Tapi agar user friendly, kita pertahankan persen sebagai modulo. Sementara jika ingin persen dari suatu angka, user bisa hitung manual.
-        // Tidak perlu overthinking, cukup validasi dan evaluasi.
-        // Tapi hati-hati dengan % di js bekerja untuk modulus, kita biarkan sesuai ekspektasi umum kalkulator (sisa bagi)
         const evalFunc = new Function('return (' + prepared + ')');
         let result = evalFunc();
-        // Jika hasil NaN atau infinite, lempar error
         if (isNaN(result) || !isFinite(result)) {
             throw new Error("Math Error");
         }
         return result;
     }
     
-    // Format hasil agar tidak terlalu panjang dan menghilangkan trailing .0 jika perlu
     function formatResult(num) {
-        // Batasi maksimal 10 digit desimal untuk tampilan cantik
         if (Number.isInteger(num)) {
             return num.toString();
         }
-        // Jika angka desimal terlalu panjang, bulatkan sampai 8 digit
         let rounded = parseFloat(num.toFixed(8));
-        // Hapus trailing zero
         let str = rounded.toString();
         if (str.includes('.')) {
             str = str.replace(/\.?0+$/, '');
@@ -353,14 +305,9 @@
         return str;
     }
     
-    // Menambahkan ke ekspresi (angka, operator, titik)
     function addToExpression(value) {
-        // Aturan setelah evaluasi: jika baru saja menekan = dan kita tekan angka/operator, maka kita reset ekspresi
         if (justEvaluated) {
-            // jika yang ditambahkan adalah operator, kita lanjutkan dari hasil sebelumnya
-            // tapi agar lebih natural: misal hasil 8 lalu tekan + , maka ekspresi menjadi "8 + "
             if (isOperator(value) || value === '%') {
-                // gunakan hasil terakhir yang tampil di result (sebagai angka awal)
                 let lastRes = resultDiv.innerText;
                 if (lastRes !== "Error" && !isNaN(parseFloat(lastRes))) {
                     currentExpression = lastRes + value;
@@ -368,15 +315,11 @@
                     currentExpression = "0" + value;
                 }
             } else {
-                // angka atau titik, mulai ekspresi baru
                 currentExpression = value;
             }
             justEvaluated = false;
         } else {
-            // normal append
-            // Cegah multiple leading zero tidak perlu? lebih baik biarkan logika sederhana
-            // Tapi jika ekspresi kosong dan value '00', kita cukup "0"
-            if (currentExpression === "" && (value === "00")) {
+            if (currentExpression === "" && value === "00") {
                 currentExpression = "0";
             } 
             else if (currentExpression === "" && value === ".") {
@@ -386,37 +329,29 @@
                 currentExpression += value;
             }
         }
-        // Bersihkan ekspresi dari operator ganda berlebihan (opsional, tapi biar rapi)
-        // Misal: jika ada "+-" akan tetap, tapi bisa dievaluasi error, user dapat menghapus. Tidak masalah.
         updateDisplay();
     }
     
-    // Cek apakah string merupakan operator (+, -, *, /, ×, ÷)
     function isOperator(str) {
-        return ['+', '-', '*', '/', '×', '÷'].includes(str);
+        return ['+', '-', '*', '/', '×', '÷', '−'].includes(str);
     }
     
-    // Tombol clear (C)
     function clearAll() {
         currentExpression = "";
         justEvaluated = false;
         updateDisplay();
     }
     
-    // Tombol delete (⌫) hapus karakter terakhir
     function deleteLast() {
         if (justEvaluated) {
-            // setelah hasil evaluasi, jika tekan hapus, biasanya ingin menghapus ekspresi terakhir? kita reset
             currentExpression = "";
             justEvaluated = false;
         } else {
-            // hapus 1 karakter dari kanan
             currentExpression = currentExpression.slice(0, -1);
         }
         updateDisplay();
     }
     
-    // Tombol sama dengan (=)
     function evaluateCurrent() {
         if (currentExpression === "") {
             resultDiv.innerText = "0";
@@ -427,48 +362,97 @@
             let rawResult = evaluateExpression(currentExpression);
             let niceResult = formatResult(rawResult);
             resultDiv.innerText = niceResult;
-            // Simpan hasil ke ekspresi untuk melanjutkan perhitungan
-            // Tapi biarkan ekspresi tetap tampil di baris atas, namun saat angka selanjutnya akan reset
-            // Tapi agar pengalaman seperti kalkulator umum, setelah =, ekspresi dipertahankan tapi kita siapkan justEvaluated true
-            // Dan hasil muncul di result. Saat tekan angka/operator nanti akan reset atau lanjut.
-            // Jadi kita set justEvaluated = true agar input berikutnya mereset/menggunakan hasil.
             justEvaluated = true;
-            // optional: kita bisa menampilkan ekspresi sebelumnya di bagian expression, tidak perlu diubah
-            // Namun kita tidak ubah currentExpression biar tetap terlihat, tetapi jika user menekan angka, akan reset.
-            // Kalau user ingin langsung edit, bisa tekan tombol angka atau operator. Itu sesuai justEvaluated.
-            // Untuk kenyamanan, simpan hasil terakhir sebagai angka untuk operator lanjutan nanti.
-            // Tetapi karena kita set justEvaluated true, maka di addToExpression akan menangani lanjutan operator dengan baik.
-            // Juga update tampilan (tetap sama, tidak mengubah expression tapi hasil berubah)
-            updateDisplay(); // memastikan display result sudah sesuai
+            updateDisplay();
         } catch (e) {
             resultDiv.innerText = "Error";
-            justEvaluated = true; // supaya input selanjutnya mereset error state
-            // reset ekspresi agar tidak error terus? biarkan user clear atau hapus
-            // tetapi akan lebih baik menampilkan error sementara, tombol clear bisa reset.
+            justEvaluated = true;
         }
     }
     
-    // Tombol persen : membuat persen dari angka terakhir? standar kalkulator: misal 50% = 0.5, atau 50+20% = 50+10 =60.
-    // Untuk kesederhanaan, kita akan implementasi persen sebagai operasi modulo (sisa bagi) tapi agar sesuai "kalkulator imut", saya implementasikan 
-    // persen untuk menghitung persen dari angka saat ini? Biar lebih intuitif? Banyak yang berharap % jadi persentase.
-    // Saya buat agar ketika menekan % dia akan memodifikasi angka terakhir menjadi persen (nilai/100) 
-    // Namun karena kita support ekspresi yang kompleks, lebih baik fungsionalitas sederhana: % mengubah angka yang baru diketik menjadi persen dari nilai sebelumnya?
-    // Agak rumit, maka untuk kalkulator ini saya pilih modulo (sisa bagi) untuk menghindari bug, tapi saya tambahkan penjelasan di footer? 
-    // Tapi karena judulnya spesial buat Nisa Imut, Saya akan buat % berfungsi sebagai persentase sederhana: 
-    // misal ekspresi "50+20%" akan diolah menjadi 50+10? terlalu kompleks parsing. Jadi tetap gunakan modulo biar stabil, tapi biar tidak membingungkan, saya ubah.
-    // Agar lebih sesuai ekspektasi kebanyakan pengguna awam, saya akan mengubah % menjadi persen (membagi 100) pada evaluasi saja? 
-    // Tetapi karena kita tidak parsing grammar, lebih baik gunakan % sebagai modulus (sisa bagi) tapi saya ganti tombol persen dengan simbol % tapi fungsinya modulo.
-    // atau kita tambahkan fitur jika user tekan % setelah angka, akan mengganti angka menjadi angka/100? terlalu intervensi.
-    // Saya putuskan tetap jadi operator modulus (sisa bagi) karena lebih mudah dan stabil, dengan catatan jelas di panduan? tidak masalah.
-    // Tapi saya akan buat tombol % menjadi persen ala kalkulator modern? tidak, saya terapkan sebagai persentase dari hasil evaluasi terakhir? rumit.
-    // Biarkan % sebagai operator % (modulus) yang valid dalam matematika (sisa bagi). Itu tidak salah.
+    function addDecimal() {
+        if (justEvaluated) {
+            currentExpression = "0.";
+            justEvaluated = false;
+            updateDisplay();
+            return;
+        }
+        
+        let parts = currentExpression.split(/[\+\-\*\/%×÷−]/);
+        let lastPart = parts[parts.length-1];
+        if (lastPart.includes('.')) {
+            return;
+        }
+        if (currentExpression === "" || currentExpression.endsWith("(") || isOperator(currentExpression.slice(-1))) {
+            currentExpression += "0.";
+        } else {
+            currentExpression += ".";
+        }
+        updateDisplay();
+    }
     
-    // Namun supaya lebih imut dan menyenangkan, saya membuat % sebagai tombol "persen" dengan cara membagi angka yang ada di layar hasil dengan 100.
-    // Coba buat method percentAction: mengubah ekspresi? Lebih simple, jika dalam keadaan tidak mengetik ekspresi panjang? tidak konsisten.
-    // Solusi: tombol % akan menambahkan karakter '%' ke ekspresi dan bekerja sebagai modulus (sisa bagi) secara matematis, karena dalam javascript operator % adalah modulus.
-    // user bisa pakai untuk hitung sisa bagi seperti 10%3=1. Tidak masalah. 
-    // Tapi untuk keamanan, saya biarkan seperti itu.
-    // Namun saya bisa menambahkan special handling: jika tekan % setelah angka dan ingin persen dari angka sebelumnya? susah.
-    // Saya memutuskan tetap jadi operator modulo, karena cukup berguna. Tapi agar lebih lucu, tooltip tidak ada, biarlah.
+    // Event binding yang sudah diperbaiki
+    document.querySelectorAll('.num-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (btn.hasAttribute('data-num')) {
+                let numVal = btn.getAttribute('data-num');
+                addToExpression(numVal);
+            } else if (btn.hasAttribute('data-dot')) {
+                addDecimal();
+            }
+        });
+    });
     
-    // t
+    document.querySelectorAll('.operator-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            let op = btn.getAttribute('data-op');
+            if (!op) return;
+            
+            let displayOp = op;
+            if (op === '/') displayOp = '÷';
+            if (op === '*') displayOp = '×';
+            if (op === '-') displayOp = '−';
+            
+            if (justEvaluated) {
+                let lastRes = resultDiv.innerText;
+                if (lastRes !== "Error" && !isNaN(parseFloat(lastRes))) {
+                    currentExpression = lastRes + displayOp;
+                } else {
+                    currentExpression = "0" + displayOp;
+                }
+                justEvaluated = false;
+            } else {
+                if (currentExpression === "") {
+                    currentExpression = "0" + displayOp;
+                } else {
+                    const lastChar = currentExpression.slice(-1);
+                    if (['+', '-', '×', '÷', '%', '*', '/', '−'].includes(lastChar)) {
+                        currentExpression = currentExpression.slice(0, -1) + displayOp;
+                    } else {
+                        currentExpression += displayOp;
+                    }
+                }
+            }
+            updateDisplay();
+        });
+    });
+    
+    document.querySelector('.clear-btn').addEventListener('click', () => {
+        clearAll();
+    });
+    
+    document.querySelector('.delete-btn').addEventListener('click', () => {
+        deleteLast();
+    });
+    
+    document.querySelector('.equal-btn').addEventListener('click', () => {
+        evaluateCurrent();
+    });
+    
+    // Inisialisasi
+    clearAll();
+</script>
+</body>
+</html>
