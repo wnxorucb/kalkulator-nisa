@@ -217,8 +217,8 @@
     </div>
 
     <div class="buttons-panel">
-        <button class="clear-btn" data-action="clear">C</button>
-        <button class="delete-btn" data-action="delete">⌫</button>
+        <button class="clear-btn">C</button>
+        <button class="delete-btn">⌫</button>
         <button class="operator-btn" data-op="%">%</button>
         <button class="operator-btn" data-op="/">÷</button>
 
@@ -240,7 +240,7 @@
         <button class="num-btn" data-num="0">0</button>
         <button class="num-btn" data-num="00">00</button>
         <button class="num-btn" data-dot=".">.</button>
-        <button class="equal-btn" data-action="equals">=</button>
+        <button class="equal-btn">=</button>
     </div>
     <div class="footer-note">
         ✨ sayang nisa, hitungan jadi lebih manis ✨
@@ -249,71 +249,63 @@
 
 <script>
     let currentExpression = "";
+    let lastResult = "0";
     let justEvaluated = false;
 
     const expressionDiv = document.getElementById("expressionDisplay");
     const resultDiv = document.getElementById("resultDisplay");
 
-    function updateDisplay() {
+    function updateExpressionDisplay() {
         if (currentExpression === "") {
             expressionDiv.innerText = "0";
         } else {
             expressionDiv.innerText = currentExpression;
         }
-        
-        if (currentExpression.trim() === "") {
+    }
+
+    function evaluateAndShowResult() {
+        if (currentExpression === "") {
             resultDiv.innerText = "0";
+            lastResult = "0";
             return;
         }
         
         try {
-            let evalResult = evaluateExpression(currentExpression);
-            if (typeof evalResult === 'number' && !isNaN(evalResult) && isFinite(evalResult)) {
-                let formatted = formatResult(evalResult);
-                resultDiv.innerText = formatted;
-            } else {
-                resultDiv.innerText = "Error";
+            let prepared = currentExpression.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+            const allowedRegex = /^[0-9+\-*/%.()\s]+$/;
+            if (!allowedRegex.test(prepared)) {
+                throw new Error("Invalid expression");
             }
+            const evalFunc = new Function('return (' + prepared + ')');
+            let rawResult = evalFunc();
+            
+            if (isNaN(rawResult) || !isFinite(rawResult)) {
+                throw new Error("Math Error");
+            }
+            
+            let formattedResult;
+            if (Number.isInteger(rawResult)) {
+                formattedResult = rawResult.toString();
+            } else {
+                let rounded = parseFloat(rawResult.toFixed(8));
+                formattedResult = rounded.toString();
+                if (formattedResult.includes('.')) {
+                    formattedResult = formattedResult.replace(/\.?0+$/, '');
+                }
+            }
+            
+            resultDiv.innerText = formattedResult;
+            lastResult = formattedResult;
         } catch (e) {
             resultDiv.innerText = "Error";
+            lastResult = "Error";
         }
     }
-    
-    function evaluateExpression(expr) {
-        let prepared = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
-        const allowedRegex = /^[0-9+\-*/%.()\s]+$/;
-        if (!allowedRegex.test(prepared)) {
-            throw new Error("Invalid expression");
-        }
-        const evalFunc = new Function('return (' + prepared + ')');
-        let result = evalFunc();
-        if (isNaN(result) || !isFinite(result)) {
-            throw new Error("Math Error");
-        }
-        return result;
-    }
-    
-    function formatResult(num) {
-        if (Number.isInteger(num)) {
-            return num.toString();
-        }
-        let rounded = parseFloat(num.toFixed(8));
-        let str = rounded.toString();
-        if (str.includes('.')) {
-            str = str.replace(/\.?0+$/, '');
-        }
-        return str;
-    }
-    
+
     function addToExpression(value) {
         if (justEvaluated) {
-            if (isOperator(value) || value === '%') {
-                let lastRes = resultDiv.innerText;
-                if (lastRes !== "Error" && !isNaN(parseFloat(lastRes))) {
-                    currentExpression = lastRes + value;
-                } else {
-                    currentExpression = "0" + value;
-                }
+            if (['+', '-', '×', '÷', '%', '*', '/', '−'].includes(value)) {
+                currentExpression = lastResult + value;
             } else {
                 currentExpression = value;
             }
@@ -321,27 +313,23 @@
         } else {
             if (currentExpression === "" && value === "00") {
                 currentExpression = "0";
-            } 
-            else if (currentExpression === "" && value === ".") {
+            } else if (currentExpression === "" && value === ".") {
                 currentExpression = "0.";
-            }
-            else {
+            } else {
                 currentExpression += value;
             }
         }
-        updateDisplay();
+        updateExpressionDisplay();
     }
-    
-    function isOperator(str) {
-        return ['+', '-', '*', '/', '×', '÷', '−'].includes(str);
-    }
-    
+
     function clearAll() {
         currentExpression = "";
         justEvaluated = false;
-        updateDisplay();
+        updateExpressionDisplay();
+        resultDiv.innerText = "0";
+        lastResult = "0";
     }
-    
+
     function deleteLast() {
         if (justEvaluated) {
             currentExpression = "";
@@ -349,49 +337,31 @@
         } else {
             currentExpression = currentExpression.slice(0, -1);
         }
-        updateDisplay();
+        updateExpressionDisplay();
     }
-    
-    function evaluateCurrent() {
-        if (currentExpression === "") {
-            resultDiv.innerText = "0";
-            return;
-        }
-        
-        try {
-            let rawResult = evaluateExpression(currentExpression);
-            let niceResult = formatResult(rawResult);
-            resultDiv.innerText = niceResult;
-            justEvaluated = true;
-            updateDisplay();
-        } catch (e) {
-            resultDiv.innerText = "Error";
-            justEvaluated = true;
-        }
-    }
-    
+
     function addDecimal() {
         if (justEvaluated) {
             currentExpression = "0.";
             justEvaluated = false;
-            updateDisplay();
+            updateExpressionDisplay();
             return;
         }
         
         let parts = currentExpression.split(/[\+\-\*\/%×÷−]/);
-        let lastPart = parts[parts.length-1];
+        let lastPart = parts[parts.length - 1];
         if (lastPart.includes('.')) {
             return;
         }
-        if (currentExpression === "" || currentExpression.endsWith("(") || isOperator(currentExpression.slice(-1))) {
+        if (currentExpression === "" || currentExpression.endsWith("(") || ['+', '-', '×', '÷', '%', '*', '/', '−'].includes(currentExpression.slice(-1))) {
             currentExpression += "0.";
         } else {
             currentExpression += ".";
         }
-        updateDisplay();
+        updateExpressionDisplay();
     }
-    
-    // Event binding yang sudah diperbaiki
+
+    // Event binding untuk tombol angka
     document.querySelectorAll('.num-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -403,7 +373,8 @@
             }
         });
     });
-    
+
+    // Event binding untuk tombol operator
     document.querySelectorAll('.operator-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -416,9 +387,8 @@
             if (op === '-') displayOp = '−';
             
             if (justEvaluated) {
-                let lastRes = resultDiv.innerText;
-                if (lastRes !== "Error" && !isNaN(parseFloat(lastRes))) {
-                    currentExpression = lastRes + displayOp;
+                if (lastResult !== "Error" && !isNaN(parseFloat(lastResult))) {
+                    currentExpression = lastResult + displayOp;
                 } else {
                     currentExpression = "0" + displayOp;
                 }
@@ -435,22 +405,26 @@
                     }
                 }
             }
-            updateDisplay();
+            updateExpressionDisplay();
         });
     });
-    
+
+    // Tombol clear
     document.querySelector('.clear-btn').addEventListener('click', () => {
         clearAll();
     });
-    
+
+    // Tombol delete
     document.querySelector('.delete-btn').addEventListener('click', () => {
         deleteLast();
     });
-    
+
+    // Tombol sama dengan (hasil baru muncul di sini)
     document.querySelector('.equal-btn').addEventListener('click', () => {
-        evaluateCurrent();
+        evaluateAndShowResult();
+        justEvaluated = true;
     });
-    
+
     // Inisialisasi
     clearAll();
 </script>
